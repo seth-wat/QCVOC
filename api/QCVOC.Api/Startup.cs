@@ -30,6 +30,8 @@ namespace QCVOC.Api
     using QCVOC.Api.Data.Repository;
     using QCVOC.Api.Middleware;
     using QCVOC.Api.Security;
+    using QCVOC.Server.Data.Model.Composite;
+    using QCVOC.Server.Data.Repository.Composite;
     using Swashbuckle.AspNetCore.Swagger;
     using Swashbuckle.AspNetCore.SwaggerGen;
     using Swashbuckle.AspNetCore.SwaggerUI;
@@ -78,6 +80,11 @@ namespace QCVOC.Api
                 new PatronRepository(serviceProvider.GetService<IDbConnectionFactory>()));
             services.AddScoped<IRepository<Service>, ServiceRepository>(serviceProvider =>
                 new ServiceRepository(serviceProvider.GetService<IDbConnectionFactory>()));
+
+            services.AddScoped<ICompositeRepository<EventsAccounts>, EventsAccountsRepository>(serviceProvider =>
+                new EventsAccountsRepository(serviceProvider.GetService<IDbConnectionFactory>()));
+            services.AddScoped<ICompositeRepository<EventsServices>, EventsServicesRepository>(serviceProvider =>
+                new EventsServicesRepository(serviceProvider.GetService<IDbConnectionFactory>()));
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options => GetTokenValidationParameters());
