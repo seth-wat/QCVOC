@@ -7,7 +7,6 @@ namespace QCVOC.Api.Data.Model
 {
     using System;
     using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
     using QCVOC.Api.Data.Model.Security;
 
     public class Event
@@ -15,12 +14,9 @@ namespace QCVOC.Api.Data.Model
         public DateTime EndTime { get; set; }
 
         public IList<Account> Hosts { get; set; }
-
-        [Key]
         public Guid Id { get; set; }
-
         public string Name { get; set; }
-
+        public IList<Service> Services { get; set; }
         public DateTime StartTime { get; set; }
     }
 }
