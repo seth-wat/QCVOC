@@ -14,12 +14,7 @@
 
         private IDbConnectionFactory ConnectionFactory { get; }
 
-        public EventsAccounts Add(EventsAccounts composite)
-        {
-            return Add(composite, null);
-        }
-
-        public EventsAccounts Add(EventsAccounts composite, IDbTransaction transaction)
+        public EventsAccounts Add(EventsAccounts composite, IDbTransaction transaction = null)
         {
             var query = @"
                 INSERT INTO EventsAccounts (
@@ -45,12 +40,7 @@
             return composite;
         }
 
-        public void Remove(EventsAccounts composite)
-        {
-            Remove(composite, null);
-        }
-
-        public void Remove(EventsAccounts composite, IDbTransaction transaction)
+        public void Remove(EventsAccounts composite, IDbTransaction transaction = null)
         {
             var query = @"
                 DELETE
