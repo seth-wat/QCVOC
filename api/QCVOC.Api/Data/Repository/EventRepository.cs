@@ -12,6 +12,8 @@ namespace QCVOC.Api.Data.Repository
     using QCVOC.Api.Data.ConnectionFactory;
     using QCVOC.Api.Data.Model;
     using QCVOC.Api.Data.Model.Security;
+    using QCVOC.Server.Data.Model.Composite;
+    using QCVOC.Server.Data.Repository.Composite;
 
     public class EventRepository : IRepository<Event>
     {
@@ -19,15 +21,24 @@ namespace QCVOC.Api.Data.Repository
         ///     Initializes a new instance of the <see cref="EventRepository"/> class.
         /// </summary>
         /// <param name="connectionFactory"></param>
-        public EventRepository(IDbConnectionFactory connectionFactory, IRepository<Account> accountRepository, IRepository<Service> serviceRepository)
+        public EventRepository(
+            IDbConnectionFactory connectionFactory,
+            IRepository<Account> accountRepository,
+            IRepository<Service> serviceRepository,
+            ICompositeRepository<EventsAccounts> eventsAccountsRepository,
+            ICompositeRepository<EventsServices> eventsServicesRepository)
         {
             ConnectionFactory = connectionFactory;
             AccountRepository = accountRepository;
             ServiceRepository = serviceRepository;
+            EventsAccountsRepository = eventsAccountsRepository;
+            EventsServicesRepository = eventsServicesRepository;
         }
 
         private IRepository<Account> AccountRepository { get; }
         private IDbConnectionFactory ConnectionFactory { get; }
+        private ICompositeRepository<EventsAccounts> EventsAccountsRepository { get; }
+        private ICompositeRepository<EventsServices> EventsServicesRepository { get; }
         private IRepository<Service> ServiceRepository { get; }
 
         public Event Create(Event newEvent)
@@ -53,6 +64,7 @@ namespace QCVOC.Api.Data.Repository
             }
 
             using (var db = ConnectionFactory.CreateConnection())
+            using (var tx = db.BeginTransaction())
             {
                 // insert event record
                 var query = @"
@@ -77,51 +89,20 @@ namespace QCVOC.Api.Data.Repository
                     starttime = newEvent.StartTime
                 };
 
-                db.Execute(query, param);
+                db.Execute(query, param, tx);
 
                 // insert hosts
-                query = @"
-                    INSERT INTO EventsAccounts (
-                        eventid,
-                        accountid
-                    ) VALUES (
-                        @eventid,
-                        @accountid
-                    )
-                ";
-
                 foreach (var account in accounts)
                 {
-                    var eventsaccountsparam = new
-                    {
-                        eventid = newEvent.Id,
-                        accountid = account.Id,
-                    };
-
-                    db.Execute(query, eventsaccountsparam);
+                    EventsAccountsRepository.Add(new EventsAccounts { EventId = newEvent.Id, AccountId = account.Id }, tx);
                 }
-
-                // insert services
-                query = @"
-                    INSERT INTO EventsServices (
-                        eventid,
-                        serviceid
-                    ) VALUES (
-                        @eventid,
-                        @serviceid
-                    )
-                ";
 
                 foreach (var service in services)
                 {
-                    var eventsservicesparam = new
-                    {
-                        eventid = newEvent.Id,
-                        serviceid = service.Id,
-                    };
-
-                    db.Execute(query, eventsservicesparam);
+                    EventsServicesRepository.Add(new EventsServices { EventId = newEvent.Id, ServiceId = service.Id }, tx);
                 }
+
+                tx.Commit();
 
                 var inserted = Get(newEvent.Id);
                 return inserted;
